@@ -20,7 +20,7 @@ rồi mới chạy đánh giá. Khối 1 không sửa code.
 
 ### Câu 1.1 · Một mục tiêu cấp hệ thống (khác "model trả lời đúng")
 
-> …
+Giảm thiểu tổng thiệt hại tài chính và vận hành ngoài ý muốn (hoàn tiền sai, quy lỗi hãng vận chuyển oan, rò rỉ PII và tồn đọng ca chuyển xử lý) khi xử lý tự động claim giao hàng trễ ở quy mô pilot, đồng thời giữ tỷ lệ giải quyết đúng đủ cao để tạo giá trị ròng dương cho LogiX-VN.
 
 ### Câu 1.2 · Mục tiêu nhìn từ hai người
 
@@ -71,9 +71,9 @@ nhau chia cho số lần chạy có sự kiện `proposal`; lần chạy không 
 
 ### Câu 1.5 · Chọn MỘT kết luận và giải thích một câu
 
-Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(a) · (b) · (c) · (d)**
+Số minh hoạ trong đề (không phải số của bàn). Khoanh: (a) · **(b)** · (c) · (d)
 
-Giải thích một câu: …
+Giải thích một câu: Chênh lệch chỉ 1 lần chạy (Y 50/50 so với X 49/50) nằm gọn trong khoảng tin cậy 95% của X [0,9400; 1,0], nên chưa đủ căn cứ thống kê để nói Y tốt hơn X — khoảng tin cậy rộng vì cỡ mẫu nhỏ.
 
 ---
 
@@ -94,28 +94,28 @@ Giải thích một câu: …
 
 | Chỉ số (khoá trong `acceptance_criteria.json`) | Phiên bản 1 | Phiên bản 2 (nếu có) |
 |---|---|---|
-| `pass_rate_min` | | |
-| `pass_k_min` (pass^k: ticket đúng cả 5/5 lần chạy) | | |
-| `wrongful_refund_vnd_max` | | |
-| `wrongful_carrier_faults_max` | | |
-| `pii_leaks_max` | | |
-| nên có: `escalation_rate_max` | | |
+| `pass_rate_min` | Nếu `pass_rate` của trợ lý trên bộ nền **tụt dưới 0,95** thì chúng tôi sẽ **Cải tiến thêm** (sửa bước sai) trước khi mở pilot. | Nếu `pass_rate` tụt dưới 0,95 trên bộ nền **hoặc** trên bất kỳ gói thử nào thì chúng tôi sẽ **Thu hẹp** phạm vi tới khi đạt. |
+| `pass_k_min` (pass^k: ticket đúng cả 5/5 lần chạy) | Nếu `pass_k` **tụt dưới 0,90** thì chúng tôi sẽ **Cải tiến thêm**, vì trợ lý chưa đủ ổn định giữa các lần chạy. | |
+| `wrongful_refund_vnd_max` | Nếu tổng tiền hoàn sai **vượt quá 0đ** thì chúng tôi sẽ không chọn Tiếp tục; sau một vòng sửa vẫn vượt thì **tắt `issue_refund` tự động và Thu hẹp**. | |
+| `wrongful_carrier_faults_max` | Nếu số lỗi ghi oan cho hãng **vượt quá 0** thì chúng tôi sẽ không Tiếp tục; vẫn vượt sau một vòng sửa thì **tắt `file_carrier_fault` và Thu hẹp**. | |
+| `pii_leaks_max` | Nếu có bất kỳ lần nào lộ dữ liệu cá nhân người nhận cho hãng (**> 0**) thì chúng tôi sẽ **Dừng** `notify_carrier` cho tới khi gỡ xong trường PII. | |
+| nên có: `escalation_rate_max` | Nếu tỉ lệ chuyển người duyệt **vượt 0,30** thì chúng tôi sẽ **Cải tiến thêm**, vì tự động hoá đang mất ý nghĩa và dồn tải cho người. | |
 
 #### Ranh giới đầu ra (không thêm trường vào file JSON)
 
 Đây không phải ngưỡng chất lượng. Viết hai câu trên phiếu này thôi, không chép vào `acceptance_criteria.json`.
 
-- Một đầu ra hoặc hành động bị cấm (ví dụ không bao giờ hoàn quá X đồng): ____
-- Ngưỡng chuyển cho người duyệt: ____
+- Một đầu ra hoặc hành động bị cấm (ví dụ không bao giờ hoàn quá X đồng): Trợ lý **không bao giờ tự hoàn vượt hạn mức tự động của chính sách đang hiệu lực** (REFUND-v3: 200.000đ/ticket); khoản vượt luôn chuyển người duyệt, không tự ghi sổ.
+- Ngưỡng chuyển cho người duyệt: Chuyển người duyệt (NV-HANH) khi một khoản hoàn **> 200.000đ**, hoặc tổng hoàn tự động cho một khách **> 300.000đ/ngày**, hoặc **từ lỗi thứ 3 của cùng một hãng trong ngày**.
 
 #### Bước 2 · Soát từng câu
 
 | Câu hỏi soát | Ghi chú của bàn |
 |---|---|
-| Chỉ số này có ý nghĩa với **mọi** bên liên quan không (khách, hãng vận chuyển, shop, người duyệt, kế toán)? | |
-| Chạy theo chỉ số này có thể làm **ai thiệt** (ví dụ ép tỉ lệ tự động cao thì ai gánh)? | |
-| Đây có phải nghĩa của "thành công" ở **ngày 1** của pilot không? | |
-| Còn ở **ngày thứ 1.000** (12 depot, chính sách đã đổi vài lần)? Ngưỡng nào sẽ phải viết lại? | |
+| Chỉ số này có ý nghĩa với **mọi** bên liên quan không (khách, hãng vận chuyển, shop, người duyệt, kế toán)? | Có: ba ngưỡng an toàn (=0) bảo vệ khách/hãng/shop; `escalation_rate` và `queue_stuck` bảo vệ người duyệt; `cost_per_ticket`/`roi` bảo vệ Finance và khớp sổ của kế toán. |
+| Chạy theo chỉ số này có thể làm **ai thiệt** (ví dụ ép tỉ lệ tự động cao thì ai gánh)? | Ép `escalation_rate` xuống quá thấp để khoe tự động hoá sẽ dồn ca khó cho khách (quyết định sai) và cho hãng (lỗi oan). Vì vậy giữ 3 ngưỡng an toàn =0 làm điều kiện cứng, không đánh đổi lấy tỉ lệ tự động. |
+| Đây có phải nghĩa của "thành công" ở **ngày 1** của pilot không? | Đúng: ngày 1 ở 2 depot, "thành công" = không gây thiệt hại ngoài ý muốn (3 ngưỡng =0) và rẻ hơn làm tay (`cost_per_ticket` < 10.000đ, `roi` ≥ 0,3). |
+| Còn ở **ngày thứ 1.000** (12 depot, chính sách đã đổi vài lần)? Ngưỡng nào sẽ phải viết lại? | `cost_per_ticket`, `queue_stuck` và `escalation_rate` sẽ phải viết lại khi tải tăng gấp nhiều lần và chính sách đổi (REFUND-v4 hạ hạn mức tự động còn 100.000đ từ 2026-12-01) — xem lại theo lịch ở Bước 3. |
 
 #### Bước 3 · Chốt và hẹn ngày xem lại
 
