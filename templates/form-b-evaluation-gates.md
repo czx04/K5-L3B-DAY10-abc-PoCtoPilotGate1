@@ -294,23 +294,26 @@ python3 -m unittest discover -s tests
 Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bước cụ thể để không "chỉnh trên chính bộ dùng để chấm"
 (gắn với bộ nền, gói sự cố, bài kiểm tra ẩn):
 
-1. …
-2. …
+1. Dùng `T-002@55` và `data/world.json` để rút ra quy tắc tổng quát: số ngày trong tracking là nguồn sự thật; không viết điều kiện riêng theo mã ticket, câu chữ hay nhãn của bộ nền. Không sửa ticket, nhãn hoặc gói sự cố để làm cổng xanh.
+2. Giữ các ticket hiểm, gói sự cố và bài test ẩn làm holdout: chốt code/config trước khi chạy chúng; không dùng kết quả holdout để tinh chỉnh cùng phiên bản. Nếu phát hiện lỗi và cần sửa, ghi lại phiên bản mới rồi kiểm bằng holdout mới, sau đó chạy lại toàn bộ bộ nền và gói sự cố.
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 
-- Tính chất (một câu): …
+- Tính chất (một câu): Dù model dùng số ngày khách khai trong đề xuất, chỉ được ghi hoàn nếu số tiền khớp entitlement tính lại từ tracking DB/chính sách và chỉ được ghi lỗi hãng nếu số ngày khớp tracking DB; nếu lệch thì cổng phải chuyển người duyệt.
 
 ```bash
-python3 -m lab10.trace --suite base --stage after --adhoc "..." --order O-10xx --customer C-xx
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 9 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1002 --customer C-02
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 8 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1008 --customer C-08
 ```
 
 | Ticket hiểm | Nội dung ticket (`--adhoc`) | `--order` · `--customer` | Kết quả (dán dòng `SỔ CÁI` / `LỖI HÃNG` / `GỬI HÃNG`) | Tính chất giữ được? |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | Khách khai 9 ngày (tracking là 2 ngày). | `O-1002` · `C-02` | Proposal đòi 30.000đ; guard `refund_db_mismatch` (30.000đ ≠ 0đ theo DB), gate `issue_refund: escalate`; `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []`. | Có; không ghi hoàn sai, chuyển người duyệt. |
+| 2 | Khách khai 8 ngày (tracking là 9 ngày). | `O-1008` · `C-08` | Hoàn đúng chính sách 230.000đ được ghi; guard `carrier_fault_db_mismatch` (8 ≠ 9), gate `file_carrier_fault: escalate`; `LỖI HÃNG: []` · `GỬI HÃNG: []`. | Có; chỉ ghi hoàn đúng tiền, không ghi lỗi hãng theo số khách khai. |
 
 Giữ hai ticket này cho phần demo.
+
+**Kết quả thử cổng của Quân:** đạt trên hai nhánh đã thử. `seed 55` làm MockLLM tin số khách khai; nhánh hoàn chặn số tiền sai theo tracking DB, còn nhánh ghi lỗi hãng từ chối độ trễ không khớp và chuyển người duyệt. Model vẫn có thể đưa số khách khai vào proposal; cổng bảo vệ các lệnh ghi.
 
 ### B7.4 · Câu 2.9 · Cổng kinh doanh (`config/operating_gates.json` mục `business`)
 
