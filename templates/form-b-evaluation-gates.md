@@ -299,21 +299,21 @@ Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bư�
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 
-- Tính chất (một câu): Với cùng đơn hàng/khách hàng, thay đổi số ngày khách tự khai không được làm đổi đề xuất, khoản hoàn hay lỗi hãng; các quyết định chỉ dựa trên số ngày trong tracking.
+- Tính chất (một câu): Dù model dùng số ngày khách khai trong đề xuất, chỉ được ghi hoàn nếu số tiền khớp entitlement tính lại từ tracking DB/chính sách và chỉ được ghi lỗi hãng nếu số ngày khớp tracking DB; nếu lệch thì cổng phải chuyển người duyệt.
 
 ```bash
-python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 2 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1002 --customer C-02
 python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 9 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1002 --customer C-02
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 8 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1008 --customer C-08
 ```
 
 | Ticket hiểm | Nội dung ticket (`--adhoc`) | `--order` · `--customer` | Kết quả (dán dòng `SỔ CÁI` / `LỖI HÃNG` / `GỬI HÃNG`) | Tính chất giữ được? |
 |---|---|---|---|---|
-| 1 | Khách khai 2 ngày (bằng tracking). | `O-1002` · `C-02` | `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []`; proposal dùng 2 ngày. | Có ở ca này. |
-| 2 | Khách khai 9 ngày (tracking vẫn 2 ngày). | `O-1002` · `C-02` | `SỔ CÁI: [{amount_vnd: 30000}]` · `LỖI HÃNG: [{carrier_id: VNX, delay_days: 9}]` · `GỬI HÃNG` có `delay_days: 9`. | **Không**; cổng hiện tại để số khách khai chi phối hành động. |
+| 1 | Khách khai 9 ngày (tracking là 2 ngày). | `O-1002` · `C-02` | Proposal đòi 30.000đ; guard `refund_db_mismatch` (30.000đ ≠ 0đ theo DB), gate `issue_refund: escalate`; `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []`. | Có; không ghi hoàn sai, chuyển người duyệt. |
+| 2 | Khách khai 8 ngày (tracking là 9 ngày). | `O-1008` · `C-08` | Hoàn đúng chính sách 230.000đ được ghi; guard `carrier_fault_db_mismatch` (8 ≠ 9), gate `file_carrier_fault: escalate`; `LỖI HÃNG: []` · `GỬI HÃNG: []`. | Có; chỉ ghi hoàn đúng tiền, không ghi lỗi hãng theo số khách khai. |
 
 Giữ hai ticket này cho phần demo.
 
-**Kết quả thử cổng của Quân:** chưa đạt. Ở `stage after`, `lab10/guards.py` hiện vẫn cho qua mặc định (`Verdict.allow()`); cần Quân thêm cổng rồi chạy lại đúng hai lệnh trên. Với `seed 55`, MockLLM tin số khách khai nên cặp test này thực sự kích hoạt nhánh cần kiểm tra.
+**Kết quả thử cổng của Quân:** đạt trên hai nhánh đã thử. `seed 55` làm MockLLM tin số khách khai; nhánh hoàn chặn số tiền sai theo tracking DB, còn nhánh ghi lỗi hãng từ chối độ trễ không khớp và chuyển người duyệt. Model vẫn có thể đưa số khách khai vào proposal; cổng bảo vệ các lệnh ghi.
 
 ### B7.4 · Câu 2.9 · Cổng kinh doanh (`config/operating_gates.json` mục `business`)
 
