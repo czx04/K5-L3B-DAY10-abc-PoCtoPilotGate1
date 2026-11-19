@@ -15,6 +15,7 @@ Tiêu chí đã ký ở Phiếu A. Từ phút 65 bàn mới được chạy tr�
 - [B5 · Câu 2.4 · Checklist 9 nhóm việc, lần 1 · phút 70–75](#b5)
 - [B6 · Câu 2.5 · Pre-mortem bốn lăng kính → cổng phòng ngừa · phút 75–85](#b6)
 - [B7 · Câu 2.6–2.10 · Cổng phòng ngừa, runbook phần 1–3, giờ cao điểm · phút 85–105](#b7)
+
 - [B8 · Chốt cổng vòng 1 và quyết định Gate 1 · v1 · phút 105–115](#b8)
 
 ---
@@ -284,9 +285,9 @@ python3 -m unittest discover -s tests
 
 | # | Cổng (hàm và nhánh, ví dụ `write_gate` khi `tool == "issue_refund"`) | Ứng với dòng nào ở B6 / B4 | Chặn điều gì, dựa vào nguồn sự thật nào | Mã lần chạy `base · after` | Ca đang đúng nào bị hỏng? (phải là "không") |
 |---|---|---|---|---|---|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
+| 1 | `write_gate`, nhánh `tool == "issue_refund"` | B2: `T-002@55` tin số ngày khách khai thay vì tracking DB; B6 kỹ thuật: dữ liệu ticket lấn át nguồn sự thật | Tính lại độ trễ bằng `H.db_delay_days`, chọn `H.effective_policy`, tính entitlement bằng `H.entitlement_vnd`; nếu `amount_vnd` khác số tiền từ DB thì `Verdict.escalate`. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
+| 2 | `write_gate`, nhánh `tool == "issue_refund"` | B6 kỹ thuật: retry hoặc trạng thái đối soát chậm tạo lệnh hoàn trùng | Đọc `ledger_rows` theo ticket và order; nếu đã có khoản hoàn thì `Verdict.deny`, không ghi thêm lần hai. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
+| 3 | `write_gate`, nhánh `tool == "file_carrier_fault"` | B6 pháp lý/kinh doanh: lỗi hãng oan hoặc quá nhiều lỗi tự động làm hại bên thứ ba | So `delay_days` với tracking DB, yêu cầu hãng thực sự có lỗi theo `H.carrier_at_fault`; đếm `fault_rows` theo hãng và escalate từ lỗi thứ 3 theo `ops_limits.max_auto_strikes_per_carrier_per_day = 2`. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
 
 ### B7.2 · Câu 2.7 · Hai bước tránh rò rỉ dữ liệu
 
