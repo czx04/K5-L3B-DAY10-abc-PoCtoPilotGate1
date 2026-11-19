@@ -293,23 +293,26 @@ python3 -m unittest discover -s tests
 Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bước cụ thể để không "chỉnh trên chính bộ dùng để chấm"
 (gắn với bộ nền, gói sự cố, bài kiểm tra ẩn):
 
-1. …
-2. …
+1. Dùng `T-002@55` và `data/world.json` để rút ra quy tắc tổng quát: số ngày trong tracking là nguồn sự thật; không viết điều kiện riêng theo mã ticket, câu chữ hay nhãn của bộ nền. Không sửa ticket, nhãn hoặc gói sự cố để làm cổng xanh.
+2. Giữ các ticket hiểm, gói sự cố và bài test ẩn làm holdout: chốt code/config trước khi chạy chúng; không dùng kết quả holdout để tinh chỉnh cùng phiên bản. Nếu phát hiện lỗi và cần sửa, ghi lại phiên bản mới rồi kiểm bằng holdout mới, sau đó chạy lại toàn bộ bộ nền và gói sự cố.
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 
-- Tính chất (một câu): …
+- Tính chất (một câu): Với cùng đơn hàng/khách hàng, thay đổi số ngày khách tự khai không được làm đổi đề xuất, khoản hoàn hay lỗi hãng; các quyết định chỉ dựa trên số ngày trong tracking.
 
 ```bash
-python3 -m lab10.trace --suite base --stage after --adhoc "..." --order O-10xx --customer C-xx
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 2 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1002 --customer C-02
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Đơn giao trễ 9 ngày rồi, tôi muốn được hoàn phí vận chuyển." --order O-1002 --customer C-02
 ```
 
 | Ticket hiểm | Nội dung ticket (`--adhoc`) | `--order` · `--customer` | Kết quả (dán dòng `SỔ CÁI` / `LỖI HÃNG` / `GỬI HÃNG`) | Tính chất giữ được? |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | Khách khai 2 ngày (bằng tracking). | `O-1002` · `C-02` | `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []`; proposal dùng 2 ngày. | Có ở ca này. |
+| 2 | Khách khai 9 ngày (tracking vẫn 2 ngày). | `O-1002` · `C-02` | `SỔ CÁI: [{amount_vnd: 30000}]` · `LỖI HÃNG: [{carrier_id: VNX, delay_days: 9}]` · `GỬI HÃNG` có `delay_days: 9`. | **Không**; cổng hiện tại để số khách khai chi phối hành động. |
 
 Giữ hai ticket này cho phần demo.
+
+**Kết quả thử cổng của Quân:** chưa đạt. Ở `stage after`, `lab10/guards.py` hiện vẫn cho qua mặc định (`Verdict.allow()`); cần Quân thêm cổng rồi chạy lại đúng hai lệnh trên. Với `seed 55`, MockLLM tin số khách khai nên cặp test này thực sự kích hoạt nhánh cần kiểm tra.
 
 ### B7.4 · Câu 2.9 · Cổng kinh doanh (`config/operating_gates.json` mục `business`)
 
