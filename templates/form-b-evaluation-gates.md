@@ -1,6 +1,6 @@
 # Phiếu B · Đo, rủi ro, cổng vòng 1 và quyết định v1 · Khối 2A + 2B + chốt (phút 65–115)
 
-**Bàn:** ______
+**Bàn:** K5-L3B-DAY10-abc-PoCtoPilotGate1
 
 Tiêu chí đã ký ở Phiếu A. Từ phút 65 bàn mới được chạy trợ lý. Khối 2A (65–85) chưa sửa code hay config. Khối 2B (85–105) sửa
 `lab10/guards.py` và `config/operating_gates.json`. Phút 105–115 chốt cổng vòng 1 rồi viết quyết định v1. Sau phút 115 không sửa phiếu này
@@ -31,8 +31,8 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | R-base-before-20261119-161935-bde05c | base · base | baseline, chưa có cổng | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000đ · 1 · 0 | 0.2273 | Chưa đạt an toàn: hoàn sai 20.000đ và ghi oan hãng 1 lần; chưa đủ điều kiện Tiếp tục. |
-| 2 | | base · after | (cổng vòng 1, thử trước khi chốt) | | | | | |
-| 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
+| 2 | R-base-after-20261119-172354-50eadd | base · after | Thêm cổng vòng 1: 3 nhánh `write_gate` trong `guards.py` + mục `operations`/`legal` trong config | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2727 (6 ca/ngày, gồm kiểm mẫu 10%) | Cổng sửa được `T-002@55`, ba chỉ số an toàn về 0, không làm hỏng ticket đang đúng; chi phí 5.874đ, ROI 0,70 vẫn đạt. |
+| 3 | R-base-prepared-20261119-172601-6bc9f6 | base · prepared | Chốt cổng vòng 1 (`checkpoint` hash 8b8672b8); so với dòng 2 chỉ đổi `cost_budget_per_ticket_vnd` 7000 → 1500 (trần LLM) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 (0.2727 tính cả kiểm mẫu 10%) | Cả 9 ngưỡng đã ký đều `[ĐẠT ]` trên bộ nền: chi phí 5.874đ, ROI 0,70, 0 ca ùn; chưa có bằng chứng trên gói sự cố. |
 | 4 | | | | | | | | |
 
 ---
@@ -322,7 +322,7 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
 | `business.daily_refund_cap_vnd` | `2000000` | Đặt bằng ngân sách hoàn tự động tối đa Finance thống nhất trong `ops_limits.daily_auto_refund_budget_vnd` là 2.000.000đ/ngày. |
-| `business.cost_budget_per_ticket_vnd` | `7000` | Đặt theo mức 7.000đ/ticket đã yêu cầu; trần tổng chi phí trong tiêu chí ký cũng là 7.000đ, còn trần LLM độc lập là 1.500đ/ticket. |
+| `business.cost_budget_per_ticket_vnd` | `1500` | Khoá này là trần tiền máy (LLM) cho một ticket, nên đặt bằng `ops_limits.max_llm_cost_per_ticket_vnd` = 1.500đ đã thống nhất với Finance; ticket đắt nhất ở bộ nền tốn 770đ nên không chặn ca đang đúng. Trần tổng chi phí 7.000đ/ticket (LLM + người duyệt + phí trực) nằm ở tiêu chí đã ký (`cost_per_ticket_vnd_max`), không đặt ở đây. |
 | `business.pilot_scope` (all / warehouse / percent) | `all` · 100% | Vòng 1 chạy toàn bộ 2 depot, 22 ticket/ngày để đo đủ mọi phân khúc trước khi quyết; nếu một kho hoặc hãng lộ số xấu thì mới chuyển sang `warehouse`/`percent` theo nhánh "Thu hẹp" của `decision_rule` đã ký. |
 | `business.roi_min` | `0.4` | Khớp ROI tối thiểu 0,40 trong tiêu chí đã ký. |
 
