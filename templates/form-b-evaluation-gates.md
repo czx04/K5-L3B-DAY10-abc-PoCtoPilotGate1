@@ -81,26 +81,28 @@ Ba loại lỗi:
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | `T-002@55`, trace 03/05/06: `model_override` lấy 5 ngày từ ticket thay vì tracking 2 ngày; bot đề xuất và ghi hoàn 20.000đ (`delay_days_used: 5`), nhãn đúng là denied/0đ. | LogiX chịu hoàn sai; khách nhận khoản không đúng chính sách. | Cao | Lỗi chìm |
+| 2 | `T-002@55`, trace 07: `file_carrier_fault` ghi VNX/tài xế TX-VNX-03 trễ 5 ngày, trong khi tracking là 2 ngày; nhãn đúng không có lỗi hãng. | Hãng VNX và tài xế chịu ghi lỗi oan. | Cao | Lỗi chìm |
+| 3 | `T-002@55`, trace 08: `notify_carrier` gửi thêm `customer_note`; trường này không nằm trong `policies[].carrier_notice_fields` (danh sách cho phép chỉ gồm order, parcel, district, delay). | Khách bị chia sẻ nội dung không cần thiết; hãng nhận dữ liệu vượt mục đích. | Cao | Lỗi ngữ cảnh |
+| 4 | Nhánh chưa xuất hiện trong trace một ticket: nếu 10 ca cần duyệt tới cách nhau 2 phút, 1 reviewer gây 2 ca chờ quá SLA 60 phút; kiểm thử hàng chờ cho thấy 2 reviewer không ùn. | Khách chờ xử lý; CSKH chịu backlog. | Cao | Giới hạn hệ thống (rủi ro tải) |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
-| Câu hỏi | Lỗi 1 | Lỗi 2 |
-|---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | |
+| Câu hỏi | Lỗi 1 | Lỗi 2 | Lỗi 3 | Lỗi 4 |
+|---|---|---|---|---|
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | Có: tin 5 ngày khách khai hơn tracking. | Có: dùng số khách khai để quy lỗi hãng. | Có: chuyển nguyên văn ghi chú khách sang payload hãng. | Không phải nguyên nhân chính. |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | Có: có tracking 2 ngày nhưng không dùng làm căn cứ. | Có: không đối chiếu số ngày trong lệnh ghi với tracking. | Có: không áp dụng danh sách trường cho phép gửi hãng. | Không; rủi ro do năng lực hàng chờ khi tải dồn. |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | Không có hai bên cùng ghi; lỗi là không ưu tiên tracking. | Không có hai bên cùng ghi; lỗi là không kiểm lệnh ghi với tracking. | Không; lỗi là không thực thi allowlist. | Không. |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | Không. | Không. | Không. | Có thể: lượng ca đến vượt năng lực nhận xử lý trong SLA. |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
-| | Lỗi 1 | Lỗi 2 |
-|---|---|---|
-| Vì sao người gặp coi đây là lỗi | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | |
+| | Lỗi 1 | Lỗi 2 | Lỗi 3 | Lỗi 4 |
+|---|---|---|---|---|
+| Vì sao người gặp coi đây là lỗi | Tracking chỉ 2 ngày, dưới ngưỡng hoàn; LogiX mất 20.000đ sai. | Không có căn cứ ghi lỗi 5 ngày; VNX/tài xế bị ảnh hưởng oan. | Ghi chú khách không thuộc danh sách trường cần gửi cho hãng. | SLA đã ký là 60 phút; ca quá hạn bị ùn, trái `queue_stuck = 0`. |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | Trao quyền cho người khi lời khai khác tracking; chỉ dùng tracking làm căn cứ. | Chặn ghi lỗi khi số ngày không khớp; chuyển người duyệt. | Chỉ gửi trường trong allowlist; bỏ `customer_note`. | Bố trí 2 reviewer; gọi thêm người/thu hẹp tải nếu hàng chờ vượt SLA. |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Chuyển người duyệt → đối chiếu tracking/chính sách → trả lời khách, không hoàn tự động. | Chuyển Ops duyệt → xác minh tracking → chỉ ghi lỗi khi có căn cứ → thông báo hãng. | Lọc payload trước khi gửi → gửi đúng trường cho phép → khách được phản hồi qua kênh CSKH. | Ticket vào hàng chung → 2 người xử lý trong SLA → nếu tải vượt ngưỡng, gọi thêm người hoặc chuyển về quy trình tay. |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Đếm `model_override` so với tracking; đề xuất monitor `model_override_rate` (chưa có trong `monitors.py`). | Đếm lệnh `file_carrier_fault` có delay khác tracking; đề xuất monitor `carrier_delay_mismatch` (chưa có). | Đếm trường gửi hãng ngoài allowlist; đề xuất monitor `carrier_payload_unapproved_fields` (chưa có). | Đề xuất monitor `queue_stuck_count` (chưa có); đối chiếu `queue_stuck`/`queue_wait_max_min` trong report vận hành. |
 
 **Ví dụ (bộ nền, đừng chép):** `T-002@55` · sổ cái có dòng hoàn 20.000đ, hãng VNX nhận một lỗi, trong khi tracking ghi trễ 2 ngày ·
 khách không thấy gì sai, hãng chịu · cao · **lỗi chìm**. Nguồn: đầu vào (đặt sai trọng số cho con số khách tự khai). Xử lý:
@@ -308,10 +310,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
+| `business.daily_refund_cap_vnd` | `2000000` | Đặt bằng ngân sách hoàn tự động tối đa Finance thống nhất trong `ops_limits.daily_auto_refund_budget_vnd` là 2.000.000đ/ngày. |
+| `business.cost_budget_per_ticket_vnd` | `7000` | Đặt theo mức 7.000đ/ticket đã yêu cầu; trần tổng chi phí trong tiêu chí ký cũng là 7.000đ, còn trần LLM độc lập là 1.500đ/ticket. |
 | `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.roi_min` | `0.4` | Khớp ROI tối thiểu 0,40 trong tiêu chí đã ký. |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
@@ -327,12 +329,12 @@ Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết
 
 | Vai | Tên / mã nhân viên (lấy từ `data/world.json` → `staff`) | Được quyền làm gì | Liên lạc qua kênh nào |
 |---|---|---|---|
-| PIC của trợ lý (một người) | | | |
-| Người duyệt đứng tên các khoản vượt hạn mức | | | |
+| PIC của trợ lý (một người) | `NV-TUNG` | Chịu trách nhiệm vận hành, giữ công tắc tắt trợ lý | Kênh cảnh báo vận hành |
+| Người duyệt đứng tên các khoản vượt hạn mức | `NV-HANH` | Duyệt khoản cần người theo thẩm quyền | Kênh CSKH |
 | Người giữ công tắc tắt từng thao tác ghi | | | |
 | Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | | | |
 
-Số người trực duyệt mỗi ca: ___ · Mỗi giờ duyệt được: ___ ca · Phạm vi pilot: ______ (tất cả / kho nào / bao nhiêu phần trăm)
+Số người trực duyệt mỗi ca: **2** · Mỗi giờ duyệt được: **12 ca** (2 × 6) · Phạm vi pilot: ______ (tất cả / kho nào / bao nhiêu phần trăm)
 
 #### Runbook 2 · Nhìn con số nào, ngưỡng nào thì làm gì
 
@@ -364,7 +366,7 @@ Lượng ticket có thể dồn gấp ba trong một giờ (ngày sale, sau bão
 | Câu hỏi | Trả lời (có số, có tên) |
 |---|---|
 | Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | |
-| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | |
+| Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | 2 reviewer/ca, khớp `operations.reviewers_on_shift = 2`; năng lực 12 ca/giờ, không ùn trong stress 10 ca đến cách 2 phút. |
 | Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | |
 | Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | |
 | Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | |
