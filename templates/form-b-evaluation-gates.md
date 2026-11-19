@@ -255,11 +255,16 @@ Bốn lăng kính (bắt buộc đủ cả bốn; dự án AI hay chết ở ba 
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được hôm nay? (trace / data / config nào) | Thành cổng phòng ngừa nào (code hay config) / hay vào risk register |
 |---|---|---|---|
-| | Kỹ thuật | | |
-| | Kinh doanh | | |
-| | Con người và vận hành | | |
-| | Pháp lý | | |
-| | | | |
+| LLM báo quá tải đúng lúc xác nhận lệnh ghi, trợ lý "cho chắc" ghi hoàn tiền lần hai cho cùng một đơn; kế toán phát hiện sổ lệch với shop sau vài tuần | Kỹ thuật | Có: `lab10/agent.py` bắt `RateLimitError` rồi gọi lại `issue_refund` (sự kiện `write_retry`); xem trace các ticket có `write_retry`, so sổ cái | **✅ CHỌN · code** `write_gate`: chặn `issue_refund` khi sổ cái đã có dòng hoàn cho cùng `ticket_id` / `order_id` (một ticket chỉ được hoàn một lần) |
+| Trợ lý tin số ngày trễ khách tự khai hơn tracking DB, hoàn nhiều hơn quyền lợi và ghi lỗi cho hãng với số ngày sai | Kỹ thuật | Có: sự kiện `model_override` trong trace; bảng soát lỗi `T-002@55` (B2); B4 dòng WRONG | **✅ CHỌN · code** `write_gate`: tính lại quyền lợi từ DB (chính sách đang hiệu lực + `db_delay_days`); `amount_vnd` hoặc `delay_days` lệch DB thì `deny` / `escalate` |
+| Chi phí mỗi ticket (LLM + ca chuyển người 10.000đ + phí trực 30.000đ/ca) cao gần bằng làm tay, ROI không đạt; Finance cắt ngân sách pilot | Kinh doanh | Một phần: `ops_facts`, `ops_limits`; số thật đọc ở khối "kinh doanh và vận hành" của report base | Config `business.cost_budget_per_ticket_vnd` = 7000, `business.roi_min` = 0.4 (Nam, câu 2.9); theo dõi → risk register |
+| Tổng tiền hoàn tự động một ngày vượt ngân sách 2.000.000đ của Finance mà không ai được báo | Kinh doanh | Có: `ops_limits.daily_auto_refund_budget_vnd`; dòng "tổng hoàn tự động một ngày" trong report | Config `business.daily_refund_cap_vnd` ≤ 2.000.000 (Nam, câu 2.9); cổng có sẵn trong `issue_refund` sẽ chuyển người khi vượt |
+| Một người trực, giờ cao điểm ca chuyển sang dồn quá 6 ca/giờ, nhiều khách chờ quá 60 phút; chị Hạnh duyệt vội nên bỏ sót ca sai | Con người và vận hành | Một phần: `ops_facts` (6 ca/giờ, 1 người trực), `ops_limits.review_sla_minutes`; số ca ùn trong report | Config `operations.reviewers_on_shift`, `review_capacity_per_hour`, `max_queue_wait_minutes` = 60 (Hùng, câu 2.10); giờ cao điểm → runbook B7.6, risk register |
+| Ca chuyển sang không kèm lý do nên người duyệt phải tra lại từ đầu, dần mất niềm tin vào trợ lý và duyệt cho qua hoặc từ chối hết | Con người và vận hành | Một phần: `operations.decision_note` đang `false`; `ops_facts.recheck_with_note_units` = 0,4 ca | Config `operations.decision_note` = true (Hùng, câu 2.10) → risk register |
+| Trợ lý ghi lỗi cho hãng khi tracking không có nguyên nhân trễ (mặc định đổ cho hãng); GHSH bị phạt và đình chỉ, hãng khiếu nại và dọa kiện LogiX | Pháp lý | Có: O-1010, O-1012, O-1025 thiếu `delay_cause`; `lab10/agent.py` mặc định `cause = "CARRIER"`; B4 dòng INCOMPLETE | **✅ CHỌN · config + code**: `legal.carrier_fault_requires_recorded_cause` = true (Hùng) và `write_gate` từ lỗi thứ 3 cho cùng một hãng trong ngày thì `escalate` (`ops_limits.max_auto_strikes_per_carrier_per_day` = 2) |
+| Trợ lý gửi tên và số điện thoại người nhận quà cùng nguyên văn lời khách cho hãng; người nhận khiếu nại lộ dữ liệu cá nhân | Pháp lý | Có: đơn quà O-1024, O-1026 (`is_gift`); payload `recipient_contact` trong `notify_carrier`; B4 dòng ngoài kỹ thuật | Config `legal.pii_fields_blocked_to_third_party` = ["recipient_contact", "customer_note"] (Hùng, câu 2.10) |
+
+**Ba lý do chọn làm cổng phòng ngừa hôm nay:** (1) hoàn trùng khi LLM quá tải, (2) tin lời khách hơn DB, (3) ghi lỗi oan cho hãng. Chọn vì cả ba là lệnh ghi không đảo ngược được, đụng thẳng ba ngưỡng an toàn đã ký bằng 0 (`wrongful_refund_vnd`, `wrongful_carrier_faults`), và kiểm được ngay trên trace / data hôm nay. Các lý do còn lại được xử lý bằng con số trong `config/operating_gates.json` ở câu 2.9–2.10 và ghi vào Risk register (Phiếu C mục C10).
 
 ---
 
