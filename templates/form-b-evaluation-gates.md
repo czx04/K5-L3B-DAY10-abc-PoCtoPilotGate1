@@ -15,6 +15,7 @@ Tiêu chí đã ký ở Phiếu A. Từ phút 65 bàn mới được chạy tr�
 - [B5 · Câu 2.4 · Checklist 9 nhóm việc, lần 1 · phút 70–75](#b5)
 - [B6 · Câu 2.5 · Pre-mortem bốn lăng kính → cổng phòng ngừa · phút 75–85](#b6)
 - [B7 · Câu 2.6–2.10 · Cổng phòng ngừa, runbook phần 1–3, giờ cao điểm · phút 85–105](#b7)
+
 - [B8 · Chốt cổng vòng 1 và quyết định Gate 1 · v1 · phút 105–115](#b8)
 
 ---
@@ -284,9 +285,9 @@ python3 -m unittest discover -s tests
 
 | # | Cổng (hàm và nhánh, ví dụ `write_gate` khi `tool == "issue_refund"`) | Ứng với dòng nào ở B6 / B4 | Chặn điều gì, dựa vào nguồn sự thật nào | Mã lần chạy `base · after` | Ca đang đúng nào bị hỏng? (phải là "không") |
 |---|---|---|---|---|---|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
+| 1 | `write_gate`, nhánh `tool == "issue_refund"` | B2: `T-002@55` tin số ngày khách khai thay vì tracking DB; B6 kỹ thuật: dữ liệu ticket lấn át nguồn sự thật | Tính lại độ trễ bằng `H.db_delay_days`, chọn `H.effective_policy`, tính entitlement bằng `H.entitlement_vnd`; nếu `amount_vnd` khác số tiền từ DB thì `Verdict.escalate`. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
+| 2 | `write_gate`, nhánh `tool == "issue_refund"` | B6 kỹ thuật: retry hoặc trạng thái đối soát chậm tạo lệnh hoàn trùng | Đọc `ledger_rows` theo ticket và order; nếu đã có khoản hoàn thì `Verdict.deny`, không ghi thêm lần hai. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
+| 3 | `write_gate`, nhánh `tool == "file_carrier_fault"` | B6 pháp lý/kinh doanh: lỗi hãng oan hoặc quá nhiều lỗi tự động làm hại bên thứ ba | So `delay_days` với tracking DB, yêu cầu hãng thực sự có lỗi theo `H.carrier_at_fault`; đếm `fault_rows` theo hãng và escalate từ lỗi thứ 3 theo `ops_limits.max_auto_strikes_per_carrier_per_day = 2`. | `R-base-after-20261119-165633-104606` | Không; `legit_pass = 110/110`. |
 
 ### B7.2 · Câu 2.7 · Hai bước tránh rò rỉ dữ liệu
 
@@ -322,7 +323,7 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 |---|---|---|
 | `business.daily_refund_cap_vnd` | `2000000` | Đặt bằng ngân sách hoàn tự động tối đa Finance thống nhất trong `ops_limits.daily_auto_refund_budget_vnd` là 2.000.000đ/ngày. |
 | `business.cost_budget_per_ticket_vnd` | `7000` | Đặt theo mức 7.000đ/ticket đã yêu cầu; trần tổng chi phí trong tiêu chí ký cũng là 7.000đ, còn trần LLM độc lập là 1.500đ/ticket. |
-| `business.pilot_scope` (all / warehouse / percent) | | |
+| `business.pilot_scope` (all / warehouse / percent) | `all` · 100% | Vòng 1 chạy toàn bộ 2 depot, 22 ticket/ngày để đo đủ mọi phân khúc trước khi quyết; nếu một kho hoặc hãng lộ số xấu thì mới chuyển sang `warehouse`/`percent` theo nhánh "Thu hẹp" của `decision_rule` đã ký. |
 | `business.roi_min` | `0.4` | Khớp ROI tối thiểu 0,40 trong tiêu chí đã ký. |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
@@ -333,7 +334,7 @@ nguyên nhân trong tracking). Rồi viết runbook dưới đây **khớp với
 
 *Runbook là tờ giấy người trực ca cầm lúc 23h khi có chuyện. Nó trả lời: nhìn con số nào, ngưỡng nào thì làm gì, ai được quyết.
 Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết ở vòng 2 (Phiếu C mục C11). Mọi con số phải khớp `config/operating_gates.json` và report.*
-*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** ______
+*Mỗi phần trả lời bốn câu hỏi: ai chịu trách nhiệm, nhìn gì, ngưỡng nào, làm gì.* **Người viết (vai Vận hành và pháp lý):** Dư Văn Hùng
 
 #### Runbook 1 · Ai chịu trách nhiệm
 
@@ -341,10 +342,10 @@ Phần 1–3 và mục Giờ cao điểm viết ở vòng 1. Phần 4–5 viết
 |---|---|---|---|
 | PIC của trợ lý (một người) | `NV-TUNG` | Chịu trách nhiệm vận hành, giữ công tắc tắt trợ lý | Kênh cảnh báo vận hành |
 | Người duyệt đứng tên các khoản vượt hạn mức | `NV-HANH` | Duyệt khoản cần người theo thẩm quyền | Kênh CSKH |
-| Người giữ công tắc tắt từng thao tác ghi | | | |
-| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | | | |
+| Người giữ công tắc tắt từng thao tác ghi | `NV-TUNG` (Lê Thanh Tùng, giám sát vận hành) | Tắt / bật từng công tắc `issue_refund`, `file_carrier_fault`, `notify_carrier`, `send_reply` trong `config/switches.json`; thu hẹp `business.pilot_scope` | Kênh #logix-refund-pilot + gọi điện trực tiếp |
+| Người nhận khiếu nại của bên thứ ba (hãng, shop, người nhận quà) | `NV-OANH` (Phạm Kiều Oanh, kế toán đối soát) ghi nhận và đối chiếu sổ; chuyển `NV-TUNG` khi cần dừng | Ghi khiếu nại, đối chiếu sổ cái và lỗi đã ghi cho hãng, đề nghị huỷ lỗi oan hoặc thu hồi khoản hoàn sai | Kênh #logix-refund-pilot; email đối soát hằng tuần với hãng và shop |
 
-Số người trực duyệt mỗi ca: **2** · Mỗi giờ duyệt được: **12 ca** (2 × 6) · Phạm vi pilot: ______ (tất cả / kho nào / bao nhiêu phần trăm)
+Số người trực duyệt mỗi ca: **2** · Mỗi giờ duyệt được: **12 ca** (2 × 6) · Phạm vi pilot: **tất cả** (`pilot_scope.mode = "all"`, 100% ticket của 2 depot)
 
 #### Runbook 2 · Nhìn con số nào, ngưỡng nào thì làm gì
 
@@ -352,22 +353,22 @@ Mỗi dòng một tín hiệu. Cột "Lấy ở đâu" phải là một dòng tr
 
 | Tín hiệu | Lấy ở đâu | Bình thường | Ngưỡng VÀNG → việc làm | Ngưỡng ĐỎ → việc làm | Ai quyết |
 |---|---|---|---|---|---|
-| Thời gian chờ người duyệt lâu nhất | | | | | |
-| Số ca bị ùn | | | | | |
-| Chi phí mỗi ticket so với làm tay | | | | | |
-| Tổng tiền hoàn tự động trong ngày so với trần | | | | | |
-| Tiền hoàn sai | | | | | |
-| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | | | | | |
-| (tín hiệu riêng của bàn) | | | | | |
+| Thời gian chờ người duyệt lâu nhất | Report `lab10.eval`, dòng "hàng chờ người duyệt" (`queue.wait_max_min`) | 0 phút (`R-base-after-20261119-165648-701975`) | > 30 phút → người duyệt thứ hai ưu tiên hàng chờ, báo kênh | > 60 phút (`max_queue_wait_minutes`) → gọi thêm người trực; lặp lại 2 lần trong ca → thu hẹp phạm vi | NV-HANH (vàng) · NV-TUNG (đỏ) |
+| Số ca bị ùn | Report, dòng "hàng chờ người duyệt" (`queue.stuck`) | 0 ca | — (ngưỡng đã ký là 0, không có vàng) | ≥ 1 ca → gọi thêm người; ≥ 2 ca trong một ca trực → thu hẹp `pilot_scope` | NV-TUNG |
+| Chi phí mỗi ticket so với làm tay | Report, dòng "chi phí mỗi ticket" (`cost.cost_per_ticket_vnd`) | 5.821đ, làm tay 10.000đ | > 6.000đ → xem lại tỉ lệ chuyển người và số người trực | > 7.000đ (ngưỡng đã ký) → thu hẹp phần đắt nhất (kho / loại ticket); > 10.000đ → đề xuất Dừng | Đinh Hoài Nam (SP) đề xuất · NV-TUNG quyết |
+| Tổng tiền hoàn tự động trong ngày so với trần | Report, dòng "tổng hoàn tự động một ngày" (`refund.auto_refund_day_max_vnd`) | 155.000đ / trần 2.000.000đ | ≥ 1.500.000đ (75% trần) → báo kênh, NV-HANH xem các khoản lớn | Chạm 2.000.000đ (`daily_refund_cap_vnd`) → trợ lý tự chuyển người mọi khoản tiếp theo tới hết ngày | NV-HANH |
+| Tiền hoàn sai | Report, dòng `wrongful_refund_vnd`; khiếu nại đối soát của NV-OANH | 0đ (base hiện còn 20.000đ ở `T-002@55`) | — (ngưỡng đã ký là 0) | > 0đ → tắt `issue_refund` tự động, chuyển toàn bộ claim cho người duyệt, NV-OANH thu hồi khoản sai | NV-TUNG |
+| Lỗi ghi oan cho hãng / lộ dữ liệu cá nhân (pháp lý) | Report, dòng `wrongful_carrier_faults`, `pii_leaks`; khiếu nại của hãng (NV-OANH ghi) | 0 / 0 (base hiện còn 1 lỗi oan cho VNX) | Một hãng bị ghi 2 lỗi trong ngày → các lỗi tiếp theo chuyển NV-HANH duyệt | Lỗi oan ≥ 1 → tắt `file_carrier_fault`; lộ PII ≥ 1 → tắt `notify_carrier` ngay, báo pháp chế | NV-TUNG |
+| (tín hiệu riêng của bàn) Tỉ lệ chuyển người duyệt | Report, dòng "tỉ lệ chuyển người duyệt"; chỉ số `escalation_rate` trong `lab10/monitors.py` | 0,27 (6 ca/ngày, gồm 10% kiểm mẫu) | > 0,25 (ngưỡng nên có đã ký) → xem nhóm ticket nào bị chuyển nhiều | > 0,50 → tự động hoá không còn lợi, thu hẹp nhóm ticket đó về làm tay | Đinh Hoài Nam đề xuất · NV-TUNG quyết |
 
 #### Runbook 3 · Điều kiện dừng và cách dừng
 
-- Dừng một phần (tắt một thao tác ghi, thu hẹp phạm vi) khi: …
-- Dừng hẳn khi: …
-- Cách dừng, từng bước (công tắc nào trong `config/switches.json`, dòng nào trong `config/operating_gates.json`): …
-- Từ tín hiệu đỏ đến lúc dừng xong tối đa ____ phút; người bấm: ____
-- Khi đã dừng, ticket đang chờ đi đâu, ai xử lý: …
-- Điều kiện để bật lại, ai ký: …
+- Dừng một phần (tắt một thao tác ghi, thu hẹp phạm vi) khi: có 1 lần lộ PII (tắt `notify_carrier`); có 1 lỗi ghi oan cho hãng (tắt `file_carrier_fault`); có 1 khoản hoàn sai hoặc hoàn trùng (tắt `issue_refund` tự động); có ca chờ quá 60 phút hai lần trong một ca, hoặc chi phí vượt 7.000đ/ticket (thu hẹp `pilot_scope`). Khớp `operations.stop_conditions`.
+- Dừng hẳn khi: từ hai chỉ số an toàn trở lên khác 0 sau một vòng sửa, hoặc lộ PII không gỡ được, hoặc chi phí vẫn cao hơn làm tay 10.000đ/ticket sau khi đã thu hẹp (khớp `decision_rule` "Dừng" đã ký).
+- Cách dừng, từng bước (công tắc nào trong `config/switches.json`, dòng nào trong `config/operating_gates.json`): (1) NV-TUNG đổi công tắc của thao tác có vấn đề trong `config/switches.json` từ `"on"` sang `"off"` (dừng hẳn: cả bốn công tắc); (2) nếu thu hẹp: đổi `business.pilot_scope` sang `"warehouse"` kèm kho còn chạy, hoặc `"percent"` kèm phần trăm; (3) báo kênh #logix-refund-pilot: tín hiệu nào, giờ nào, đã tắt gì; (4) NV-OANH đánh dấu các khoản / lỗi bị ảnh hưởng để đối soát.
+- Từ tín hiệu đỏ đến lúc dừng xong tối đa **15** phút; người bấm: **NV-TUNG** (vắng thì NV-HANH bấm thay và báo lại)
+- Khi đã dừng, ticket đang chờ đi đâu, ai xử lý: ticket mới và ticket đang chờ quay về quy trình làm tay của CSKH; 2 người trực (NV-HANH đứng tên) xử lý theo thứ tự đến, vẫn giữ hạn 60 phút; khoản đã ghi sai được NV-OANH lập danh sách để thu hồi / huỷ lỗi với hãng.
+- Điều kiện để bật lại, ai ký: đã có bản sửa (cổng code hoặc config) và chạy lại `lab10.eval` trên bộ nền cho ba chỉ số an toàn bằng 0, không làm hỏng ticket đang đúng; NV-TUNG ký bật lại, NV-HANH đồng ý; bật lại từng công tắc, bắt đầu bằng phạm vi hẹp.
 
 ### B7.6 · Giờ cao điểm (bắt buộc với thẻ S4; các thẻ khác nên có)
 
@@ -375,11 +376,11 @@ Lượng ticket có thể dồn gấp ba trong một giờ (ngày sale, sau bão
 
 | Câu hỏi | Trả lời (có số, có tên) |
 |---|---|
-| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | |
+| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ (dựa vào `ops_facts`)? | Ngày sale hoặc sau bão, khoảng 10h–12h. Bình thường 22 ticket/ca 8 giờ (`shift_minutes` = 480), khoảng 3 ticket/giờ, 6 ca/ngày vào hàng chờ (tỉ lệ chuyển 0,27). Cao điểm gấp ba dồn trong một giờ: khoảng 18–20 ticket, tức khoảng 6 ca chuyển người trong giờ đó. |
 | Ai trực giờ cao điểm, mấy người (khớp `operations.reviewers_on_shift`)? | 2 reviewer/ca, khớp `operations.reviewers_on_shift = 2`; năng lực 12 ca/giờ, không ùn trong stress 10 ca đến cách 2 phút. |
-| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | |
-| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | |
-| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | |
+| Ngưỡng nào thì **gọi thêm người** (hàng chờ bao nhiêu ca, chờ lâu nhất bao nhiêu phút)? Ai gọi? | Hàng chờ > 8 ca, hoặc có ca chờ > 30 phút, hoặc dự báo > 12 ca/giờ (vượt sức 2 người × 6): NV-HANH gọi thêm 1 người trực từ CSKH. |
+| Ngưỡng nào thì **thu hẹp** phạm vi (khoá `business.pilot_scope`) hoặc **tắt** một thao tác ghi (`config/switches.json`)? Ai quyết? | Có ca chờ > 60 phút hai lần trong ca, hoặc ≥ 1 ca bị ùn sau khi đã gọi thêm người: NV-TUNG thu hẹp `pilot_scope` sang `"percent"` 50 (hoặc chỉ một kho) tới hết đợt cao điểm. Tổng hoàn tự động chạm 2.000.000đ: trợ lý tự chuyển người phần còn lại. Có lỗi oan / lộ PII: NV-TUNG tắt công tắc tương ứng như Runbook 3. |
+| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào (đọc report)? | Mốc base (1 người, không kiểm mẫu): 4.203đ/ticket, ROI 1,34. Config vòng 1 (2 người + kiểm mẫu 10% + ghi chú giải thích, `R-base-after-20261119-165648-701975`): 5.821đ/ticket, ROI 0,69, vẫn đạt ngưỡng đã ký (≤ 7.000đ, ≥ 0,40). Mỗi người trực thêm tốn 30.000đ/ca, khoảng +1.360đ/ticket ở 22 ticket/ngày, nên người thứ 3 chỉ gọi khi cao điểm chứ không trực cố định. |
 
 ---
 
