@@ -20,7 +20,7 @@ rồi mới chạy đánh giá. Khối 1 không sửa code.
 
 ### Câu 1.1 · Một mục tiêu cấp hệ thống (khác "model trả lời đúng")
 
-> …
+Giảm thiểu tổng thiệt hại tài chính và vận hành ngoài ý muốn (hoàn tiền sai, quy lỗi hãng vận chuyển oan, rò rỉ PII và tồn đọng ca chuyển xử lý) khi xử lý tự động claim giao hàng trễ ở quy mô pilot, đồng thời giữ tỷ lệ giải quyết đúng đủ cao để tạo giá trị ròng dương cho LogiX-VN.
 
 ### Câu 1.2 · Mục tiêu nhìn từ hai người
 
