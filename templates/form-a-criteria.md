@@ -121,7 +121,7 @@ Giải thích một câu: Y = 1,0 vẫn nằm trong khoảng tin cậy 95% [0,94
 - Bản cuối của từng câu → chép **ngưỡng** vào `required` / `nice_to_have` / `business_ops`, chép **hành động** vào `decision_rule`
   (bốn dòng: Tiếp tục, Thu hẹp, Cải tiến thêm, Dừng) và `stop_condition`. Các khoá này nằm ngay trong `config/acceptance_criteria.json`.
 - Nhóm `business_ops` (chi phí mỗi ticket tối đa, ROI tối thiểu, số ca ùn tối đa): `cost_per_ticket_vnd_max` **7000** · `roi_min` **0.40** · `queue_stuck_max` **0**
-- Ngày xem lại tiêu chí: `__________` · Ai dự: `__________` (ghi vào Phiếu B mục B8, dòng "Ngày quyết định lại").
+- Ngày xem lại tiêu chí: `2026-11-26 (sau 1 tuần pilot, hoặc sớm hơn ngay khi có tín hiệu dừng)` · Ai dự: `Cả bàn; chị Hạnh (NV-HANH, người duyệt), anh Tùng (NV-TUNG, giữ công tắc tắt trợ lý), chị Oanh (NV-OANH, kế toán đối soát)` (ghi vào Phiếu B mục B8, dòng "Ngày quyết định lại").
 
 **Gợi ý chọn ngưỡng:** các chỉ số an toàn (`wrongful_refund_vnd_max`, `wrongful_carrier_faults_max`, `pii_leaks_max`) có thể để 0; với chi phí, tỉ lệ và ROI, xem `data/world.json` mục `ops_facts`.
 
