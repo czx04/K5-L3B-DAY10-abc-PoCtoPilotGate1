@@ -1,12 +1,17 @@
 {
-  "team": "",
-  "members": [],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "team": "K5-L3B-DAY10-abc-PoCtoPilotGate1",
+  "members": [
+    "DuVanHung-2A202603975",
+    "DinhHoaiNam-2A202603762",
+    "NguyenMinhQuan-2A202603747",
+    "NguyenMinhThanh-2A202603884"
+  ],
+  "incident": "S7",
+  "decision_v1": "Cải tiến thêm",
+  "decision_v2": "Tiếp tục",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Đội giả định danh sách trường được phép gửi hãng (carrier_notice_fields trong chính sách hiệu lực) do Pháp chế soạn là đúng và không chứa dữ liệu cá nhân, và lưu lượng mỗi ca đủ thấp để 1 người trực duyệt kịp trong 60 phút; ngày sale hoặc một phiên bản chính sách mới có thể làm sai cả hai.",
+    "reduce_or_prevent": "Với kênh notify_carrier, cổng NGĂN được lộ dữ liệu vì đó là allowlist chỉ cho đi mã đơn, mã kiện, quận và số ngày trễ, mọi trường khác bị bỏ bất kể khách viết gì; còn với chi phí và hàng chờ, việc giảm người trực chỉ GIẢM rủi ro vượt trần, và kênh send_reply hay điện thoại giữa hãng và CSKH vẫn chưa có cổng.",
+    "measure_in_pilot": "Đo lại tỉ lệ ticket có dữ liệu người nhận và carrier_contact_attempt_rate trên ticket thật, lưu lượng theo giờ và thời gian chờ người duyệt với 1 người trực vào ngày cao điểm, và chi phí LLM thật mỗi ticket so với trần 1.500đ."
   }
 }
