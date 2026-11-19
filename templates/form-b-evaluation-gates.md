@@ -319,7 +319,7 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 |---|---|---|
 | `business.daily_refund_cap_vnd` | `2000000` | Đặt bằng ngân sách hoàn tự động tối đa Finance thống nhất trong `ops_limits.daily_auto_refund_budget_vnd` là 2.000.000đ/ngày. |
 | `business.cost_budget_per_ticket_vnd` | `7000` | Đặt theo mức 7.000đ/ticket đã yêu cầu; trần tổng chi phí trong tiêu chí ký cũng là 7.000đ, còn trần LLM độc lập là 1.500đ/ticket. |
-| `business.pilot_scope` (all / warehouse / percent) | | |
+| `business.pilot_scope` (all / warehouse / percent) | `all` · 100% | Vòng 1 chạy toàn bộ 2 depot, 22 ticket/ngày để đo đủ mọi phân khúc trước khi quyết; nếu một kho hoặc hãng lộ số xấu thì mới chuyển sang `warehouse`/`percent` theo nhánh "Thu hẹp" của `decision_rule` đã ký. |
 | `business.roi_min` | `0.4` | Khớp ROI tối thiểu 0,40 trong tiêu chí đã ký. |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
