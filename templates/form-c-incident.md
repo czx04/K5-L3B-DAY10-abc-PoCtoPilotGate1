@@ -1,6 +1,6 @@
 # Phiếu C · Sự cố và quyết định v2 · Khối 3 (phút 125–200)
 
-**Bàn:** ______ · **Thẻ đã bốc:** ___ *(để trống tới phút 125; bốc số xong thì ghi đúng số đó, ví dụ `S3`. Lab Coach đối chiếu với sổ; lệnh tự kiểm tra in dòng này trong report.)*
+**Bàn:** K5-L3B-DAY10-abc-PoCtoPilotGate1 · **Thẻ đã bốc:** S7 *(để trống tới phút 125; bốc số xong thì ghi đúng số đó, ví dụ `S3`. Lab Coach đối chiếu với sổ; lệnh tự kiểm tra in dòng này trong report.)*
 
 Mở `incidents/Sx/card.md` của đúng số đã bốc. Các bước trên thẻ trỏ về đúng mục trong phiếu này. Mục C3 chỉ điền phần ứng với
 số thẻ của bàn; các phần khác để trống.
@@ -30,10 +30,10 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | Sx · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | | | | | |
-| 2 | | Sx · after | | | | | | |
-| 3 | | Sx · after | | | | | | |
-| 4 | | base · after | (kiểm không regression) | | | | | |
+| 1 | R-S7-prepared-20261119-173316-6bc9f6 | S7 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 1.0 | 1.0 | 0đ · 0 · 0 (base: 30 lần lộ PII) | 0.125 (gồm kiểm mẫu 10%) | Cổng `legal` vòng 1 đã chặn hết lộ PII, nhưng 2 người trực cho 8 ticket/ngày đẩy chi phí lên 8.755đ, ROI 0,14: vượt trần đã ký. |
+| 2 | R-S7-after-20261119-173555-1ff4c4 | S7 · after | Thêm cổng allowlist `notify_carrier` (chỉ gửi `carrier_notice_fields`), giảm `reviewers_on_shift` 2 → 1, thêm monitor `carrier_contact_attempt_rate` | 1.0 | 1.0 | 0đ · 0 · 0 | 0.0 chuyển người (0.125 tính cả kiểm mẫu) | Hết vượt trần: chi phí 5.005đ, ROI 1,0, 0 ca ùn; monitor sáng đèn 0,7143 trên S7 so với 0,0 trên bộ nền. |
+| 3 | | S7 · after | | | | | | |
+| 4 | R-base-after-20261119-173608-1ff4c4 | base · after | (kiểm không regression) | 1.0 [1.0, 1.0] | 1.0 | 0đ · 0 · 0 | 0.2364 | Không regression: 110/110 đúng, 0 ca ùn với 1 người trực; chi phí 4.510đ, ROI 1,22. |
 
 ---
 
@@ -47,19 +47,20 @@ Chạy **trước khi sửa bất cứ thứ gì**:
 python3 -m lab10.grade --incident Sx
 ```
 
-- Mã lần chạy grade: `__________` · base: `__________` · prepared: `__________`
-- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): …
-- Khối kinh doanh và vận hành còn dòng nào vượt trần: …
+- Mã lần chạy grade: `R-S7-grade-20261119-173315-6bc9f6` · base: `R-S7-before-20261119-173316-6bc9f6` · prepared: `R-S7-prepared-20261119-173316-6bc9f6`
+- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): lộ dữ liệu cá nhân cho hãng **30 → 0**, pass_rate gói S7 **0,25 → 1,0**, pass_k 0,25 → 1,0. Người đỡ là cổng config `legal.pii_fields_blocked_to_third_party = ["recipient_contact", "customer_note"]` đặt ở vòng 1 (câu 2.10), không phải cổng code.
+- Khối kinh doanh và vận hành còn dòng nào vượt trần: có. Trên gói S7, chi phí mỗi ticket **8.755đ > 7.000đ** đã ký và ROI **0,14 < 0,40** (tiết kiệm ròng chỉ 9.957đ/ngày). Nguyên nhân: 2 người trực (phí giữ chỗ 60.000đ/ca) chia cho chỉ 8 ticket/ngày; cộng kiểm mẫu 10%. Hàng chờ, trần tiền hoàn và pháp lý đều trong ngưỡng.
 
 **Mở lại pre-mortem (Phiếu B mục B6), viết bằng bút khác màu.** Với thẻ S1, S3, S4, S5 đây là một phần của phần riêng theo thẻ.
 
-- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? …
-- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? …
+- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? **Pháp lý** (dữ liệu cá nhân của người thứ ba rời hệ thống), với một nhánh **kỹ thuật** (agent chép nguyên văn lời khách và tự gắn liên hệ người nhận vào payload).
+- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? **Có**: dòng pháp lý thứ hai ở B6 ("gửi tên và số điện thoại người nhận quà cùng nguyên văn lời khách cho hãng") và dòng ngoài kỹ thuật ở B4. Cổng vòng 1 đỡ được toàn bộ: 30 → 0 lần lộ. Nhưng bàn đã dùng **danh sách cấm** 2 trường, tức chỉ chặn được các trường đã biết; và bàn **không** lường trước rằng cấu hình người trực của bộ nền sẽ quá đắt với một gói ticket nhỏ.
 - Lý do còn thiếu, thêm bây giờ:
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được bằng gì (trace / data / config nào) |
 |---|---|---|
-| | | |
+| Agent hoặc một phiên bản sau thêm một trường mới vào thông báo cho hãng (ví dụ địa chỉ đầy đủ), danh sách cấm không có tên trường đó nên dữ liệu vẫn lọt | Pháp lý | So khoá trong payload `notify_carrier` (dòng `GỬI HÃNG` trong trace) với `policies[].carrier_notice_fields`; monitor `carrier_contact_attempt_rate` |
+| Số người trực đặt cố định theo lưu lượng bộ nền; ở depot hoặc ngày ít ticket, phí giữ chỗ làm chi phí mỗi ticket vượt làm tay, Finance cắt pilot | Kinh doanh | Report: dòng chi phí mỗi ticket và ROI trên gói S7 (8.755đ, ROI 0,14 ở mốc prepared); `operations.reviewers_on_shift` |
 
 ---
 

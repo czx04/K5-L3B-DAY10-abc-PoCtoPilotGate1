@@ -1,7 +1,13 @@
 """Team guards for CP3 round 1."""
 
+import re
+
 from . import helpers as H
 from .tools import Verdict
+
+# Vietnamese phone-like number (0 or +84 followed by 9 digits, spaces/dots allowed). Used only to LABEL
+# what was dropped for monitoring; the gate itself is an allowlist and never relies on this pattern.
+_PHONE_RE = re.compile(r"(?:\+?84|0)(?:[\s.\-]?\d){9}")
 
 
 def pre_guard(ctx):
@@ -108,6 +114,25 @@ def write_gate(ctx, action):
             )
             return Verdict.escalate(
                 "hãng đã có đủ số lỗi tự động tối đa trong ngày, chuyển người duyệt"
+            )
+
+    if tool == "notify_carrier":
+        # Guard 4 (round 2, S7): allowlist, not denylist. Only the fields the effective policy lists in
+        # carrier_notice_fields may reach the carrier; every other field (free text, recipient contact,
+        # any field added later) is dropped before sending.
+        policy = _effective_policy(ctx)
+        allowed = set((policy or {}).get("carrier_notice_fields") or [])
+        if not allowed:
+            return Verdict.escalate("không xác định được danh sách trường được phép gửi hãng")
+        payload = action.get("payload") or {}
+        extra = sorted(k for k in payload if k not in allowed)
+        if extra:
+            dropped_text = " ".join(str(payload[k]) for k in extra)
+            ctx.log("carrier_payload_trimmed", dropped=extra,
+                    contact_like=("recipient_contact" in extra) or bool(_PHONE_RE.search(dropped_text)))
+            return Verdict.modify(
+                "chỉ gửi hãng các trường trong carrier_notice_fields của chính sách hiệu lực",
+                payload={k: v for k, v in payload.items() if k in allowed},
             )
 
     return Verdict.allow()

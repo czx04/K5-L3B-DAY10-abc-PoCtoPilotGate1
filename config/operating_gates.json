@@ -9,8 +9,8 @@
   "operations": {
     "pic": "NV-TUNG",
     "approver_id": "NV-HANH",
-    "reviewers_on_shift": 2,
-    "review_capacity_per_hour": 12,
+    "reviewers_on_shift": 1,
+    "review_capacity_per_hour": 6,
     "max_queue_wait_minutes": 60,
     "stop_conditions": [
       "Khi có 1 lần lộ dữ liệu cá nhân cho hãng thì NV-TUNG tắt notify_carrier ngay, bật lại khi đã gỡ trường PII",
