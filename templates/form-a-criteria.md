@@ -24,10 +24,9 @@ Giảm thiểu tổng thiệt hại tài chính và vận hành ngoài ý muốn
 
 ### Câu 1.2 · Mục tiêu nhìn từ hai người
 
-- Chị Oanh, kế toán đối soát (không dùng trợ lý, nhưng phải khớp sổ với hãng và shop mỗi tuần): …
-- Chị Hạnh, trưởng ca CSKH (phải duyệt những ca trợ lý chuyển sang): …
+- Chị Oanh, kế toán đối soát: Mọi khoản hoàn tiền và mọi lỗi ghi cho hãng mà trợ lý tạo ra đều khớp sổ cái và có nguyên nhân ghi lại, để đối soát hàng tuần với hãng và shop không phải dò tay hay tranh chấp vì ghi lỗi oan.
 
----
+- Chị Hạnh, trưởng ca CSKH: Số ca trợ lý chuyển sang vừa sức một người duyệt (gần 6 ca/giờ) và ca nào cũng kèm lý do chuyển, để mọi ca được nhận xử lý trong 60 phút và khách không phải chờ.
 
 <a id="a2"></a>
 
@@ -48,12 +47,12 @@ trợ lý có đang gây thiệt hại cho bên ngoài LogiX không; không có 
 
 | | Offline, cho MỘT bước (câu 1.3) | Telemetry production (câu 1.4) |
 |---|---|---|
-| **Bước / hành vi được đo** | | |
-| **Thước đo** (một câu, có đơn vị) | | |
-| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | | |
-| **Khung thời gian / ngưỡng báo động** | (không áp dụng) | |
-| **Điểm mù** (thước đo này KHÔNG thấy gì) | | |
+| **Bước / hành vi được đo** | | Trợ lý tự ghi lỗi cho hãng vận chuyển (lệnh ghi `file_carrier_fault`); tác hại rơi vào hãng, bên ngoài LogiX (ví dụ GHSH: hộ kinh doanh 12 tài xế, phạt 150.000đ/lỗi, bị đình chỉ khi đủ 3 lỗi trong 7 ngày) |
+| **Thước đo** (một câu, có đơn vị) | | (1) Số lỗi trợ lý tự ghi cho mỗi hãng mỗi ngày (lỗi/hãng/ngày); (2) tỉ lệ lỗi tự ghi bị hãng khiếu nại trong tuần (%) |
+| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | | Nhật ký mọi lệnh `file_carrier_fault` trong sổ cái (hãng, đơn, nguyên nhân ghi trong tracking, giờ ghi), lấy toàn bộ, không lấy mẫu; danh sách khiếu nại của hãng do chị Oanh (NV-OANH) ghi khi đối soát hằng tuần. Production không có nhãn đúng/sai, nên dùng khiếu nại của hãng thay cho nhãn |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | | (1) Đếm lệnh `file_carrier_fault` nhóm theo `carrier_id` và ngày. (2) Số lỗi bị khiếu nại ÷ số lỗi đã ghi trong tuần và đã có phản hồi đối soát. Lỗi chưa có phản hồi không tính vào mẫu số mà đếm riêng; lỗi không có nguyên nhân trong tracking đếm riêng thành một dòng báo động |
+| **Khung thời gian / ngưỡng báo động** | (không áp dụng) | Theo ngày: một hãng bị ghi quá 2 lỗi/ngày (`ops_limits.max_auto_strikes_per_carrier_per_day` = 2) thì báo động và lỗi tiếp theo chuyển cho chị Hạnh (NV-HANH) duyệt. Theo tuần: tỉ lệ khiếu nại > 0, hoặc có lỗi ghi mà không có nguyên nhân trong tracking, thì báo anh Tùng (NV-TUNG) để cân nhắc tắt tự ghi lỗi |
+| **Điểm mù** (thước đo này KHÔNG thấy gì) | | Hãng nhỏ có thể không dám khiếu nại nên lỗi oan vẫn lọt; khiếu nại về chậm (theo tuần) nên hãng có thể đã bị phạt trước khi phát hiện; không thấy trường hợp trợ lý BỎ SÓT không ghi lỗi cho hãng thật sự có lỗi |
 
 **Ví dụ mẫu (bước "chọn độ trễ" của agent, đừng chép):**
 Thước đo: tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB. Dữ liệu: sự kiện `proposal.delay_days_used`
