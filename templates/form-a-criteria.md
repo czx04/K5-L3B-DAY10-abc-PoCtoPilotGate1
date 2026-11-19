@@ -70,9 +70,9 @@ nhau chia cho số lần chạy có sự kiện `proposal`; lần chạy không 
 
 ### Câu 1.5 · Chọn MỘT kết luận và giải thích một câu
 
-Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(a) · (b) · (c) · (d)**
+Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(b)**
 
-Giải thích một câu: …
+Giải thích một câu: Y = 1,0 vẫn nằm trong khoảng tin cậy 95% [0,9400; 1,0] của X và hai bản chỉ chênh 1/50 lần chạy, nên chênh lệch này có thể chỉ do ngẫu nhiên và chưa đủ căn cứ nói Y tốt hơn X; (a) sai vì không có ý nghĩa thống kê, (c) sai vì cũng không chứng minh được hai bản như nhau, (d) sai vì X đã ở mức 0,98 và câu hỏi là so sánh chứ không phải X có đạt hay không.
 
 ---
 
